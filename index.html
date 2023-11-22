@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>In Our Time</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="https://cdn.jsdelivr.net/npm/tone@next"></script>
+  <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+  <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+</head>
+<body>
+
+    <!-- Welcome Screen with Clickable Text -->
+    <div id="welcomeScreen" class="welcome-screen">
+      <p>Welcome. Here's some text that describes the project. The project uses data from the blah blah blah.<br></p>
+      <div id="welcomeText">
+        <p>↳ CLICK TO ENABLE YOUR WEB CAMERA</p>
+      </div>
+    </div>
+
+  <!-- Main Content (initially hidden) -->
+  <div id="mainContent" class="hidden">
+    <!-- Section for Demos -->
+    <section id="demos">
+      <div id="headline">Blink.</div>
+
+      <div id="liveView" class="videoView">
+        <div style="position: relative;">
+          <video id="webcam" style="position: absolute; left: 0; top: 0; opacity: 0;" autoplay playsinline></video>
+          <canvas id="output_canvas"></canvas>
+          <div id="showHideText" style="position: fixed; bottom: 10px; right: 10px; z-index: 999999;">
+            <span>Show Diagram</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="blend-shapes">
+        <ul class="blend-shapes-list" id="video-blend-shapes"></ul>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="./script.js"></script>
+</body>
+</html>
