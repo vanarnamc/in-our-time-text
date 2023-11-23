@@ -188,23 +188,25 @@ function enableCam() {
       console.log("Wait! faceLandmarker not loaded yet.");
       return;
     }
-
-        // Check and resume the Tone.js audio context
-        if (Tone.context.state !== 'running') {
-            Tone.context.resume().then(() => {
-                console.log('Audio context running');
-                initializeSynthAndEffects();
-            }).catch(error => {
-                console.error('Error resuming audio context:', error);
-            });
-        } else {
-            // Initialize the synth if the context is already running
-            initializeSynthAndEffects();
-        }
   
-    // getUserMedia parameters
+    // Check and resume the Tone.js audio context
+    if (Tone.context.state !== 'running') {
+      Tone.context.resume().then(() => {
+        console.log('Audio context running');
+        initializeSynthAndEffects();
+      }).catch(error => {
+        console.error('Error resuming audio context:', error);
+      });
+    } else {
+      // Initialize the synth if the context is already running
+      initializeSynthAndEffects();
+    }
+  
+    // getUserMedia parameters with facingMode
     const constraints = {
-      video: true
+      video: {
+        facingMode: "user" // Prefers the front-facing camera on mobile devices
+      }
     };
   
     // Activate the webcam stream
@@ -220,6 +222,7 @@ function enableCam() {
       console.error('Error accessing the webcam:', error);
     });
   }
+  
 
 
   document.addEventListener('DOMContentLoaded', () => {
