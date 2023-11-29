@@ -59,7 +59,7 @@ function toggleFacialLandmarks() {
 }
 
 fetchNYTimesHeadlines();
-toggleFacialLandmarks();
+// toggleFacialLandmarks();
 createFaceLandmarker();
 // Function to toggle the display of the facial diagram
 function toggleFacialDiagram() {
@@ -106,45 +106,7 @@ async function handleClick(event) {
         const n = allCanvas[i];
         n.parentNode.removeChild(n);
     }
-    // We can call faceLandmarker.detect as many times as we like with
-    // different image data each time. This returns a promise
-    // which we wait to complete and then call a function to
-    // print out the results of the prediction.
-    const faceLandmarkerResult = faceLandmarker.detect(event.target);
-    const canvas = document.createElement("canvas");
-    canvas.setAttribute("class", "canvas");
-    canvas.setAttribute("width", event.target.naturalWidth + "px");
-    canvas.setAttribute("height", event.target.naturalHeight + "px");
-    canvas.style.left = "0px";
-    canvas.style.top = "0px";
-    canvas.style.width = `${event.target.width}px`;
-    canvas.style.height = `${event.target.height}px`;
-    event.target.parentNode.appendChild(canvas);
-    const ctx = canvas.getContext("2d");
-    ctx.lineWidth = 2;
-    const pixelRatio = window.devicePixelRatio || 1;
-// Adjust canvas size based on device pixel ratio
-canvas.width = canvas.offsetWidth * pixelRatio;
-canvas.height = canvas.offsetHeight * pixelRatio;
 
-// Scale the drawing context to match the pixel ratio
-ctx.scale(pixelRatio, pixelRatio);
-    const drawingUtils = new DrawingUtils(ctx);
-    for (const landmarks of faceLandmarkerResult.faceLandmarks) {
-        // Draw connectors (optional, remove if you only want dots)
-        drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_TESSELATION, { color: "#C0C0C070", lineWidth: 1 });
-    
-        // Draw dots at each landmark point
-        ctx.fillStyle = "#FF0000"; // Set the color for the dots
-        const dotSize = 3; // Size of the dots
-        for (const point of landmarks) {
-            ctx.beginPath();
-            ctx.arc(point.x, point.y, dotSize, 0, 2 * Math.PI);
-            ctx.fill();
-        }
-    }
-    
-    drawBlendShapes(imageBlendShapes, faceLandmarkerResult.faceBlendshapes);
 }
 
 // Function to fetch New York Times headlines
@@ -168,7 +130,8 @@ async function fetchNYTimesHeadlines() {
         console.error('Error fetching headlines:', error);
     }
 }
-// Assuming headlines is an array of objects with 'title' and 'imageUrl'
+
+let isFirstHeadlineShown = false; // Initialize the variable
 function displayNextHeadline() {
     // Check if there are any headlines
     if (headlines.length === 0) {
@@ -191,6 +154,11 @@ function displayNextHeadline() {
         console.log(`No image available for '${currentHeadline.title}'.`);
     }
 
+    // Hide the facial diagram only after displaying the first headline
+    if (!isFirstHeadlineShown) {
+        output_canvas.style.display = 'none';
+        isFirstHeadlineShown = true; // Update the flag
+    }
     // Move to the next headline, looping back to the start if at the end
     currentHeadlineIndex = (currentHeadlineIndex + 1) % headlines.length;
 
@@ -321,7 +289,7 @@ async function predictWebcam() {
         canvasCtx.translate(canvasElement.width / pixelRatio, 0);
         canvasCtx.scale(-1, 1);
 
-        const dotSize = 10; // Adjust dot size for visibility
+        const dotSize = 5; // Adjust dot size for visibility
 
         for (const landmarks of results.faceLandmarks) {
             canvasCtx.fillStyle = dotColor; // Use the global dot color variable
@@ -344,21 +312,29 @@ async function predictWebcam() {
 
 
 
-
+//inversion and dark mode
 let lastBlinkTime = 0;
 const blinkDebounceTime = 200; // 1 second debounce time
 let isBackgroundBlack = true; // initial background color state
 
 function toggleBackgroundColor() {
     const body = document.body;
+    const infoIcon = document.getElementById('infoIconLink'); // Make sure your image has this ID
+
     if (isBackgroundBlack) {
         body.style.backgroundColor = 'white';
         headline.style.color = 'black';
         dotColor = 'black'; // Update dot color
-    } else {
+        infoIcon.style.filter = 'invert(0%)'; // No inversion for light mode
+
+    } 
+    
+    else {
         body.style.backgroundColor = 'black';
         headline.style.color = 'white';
         dotColor = 'white'; // Update dot color
+        infoIcon.style.filter = 'invert(100%)'; // Invert colors for dark mode
+
     }
     isBackgroundBlack = !isBackgroundBlack;
 }
@@ -388,8 +364,7 @@ function drawBlendShapes(el, blendShapes) {
     el.innerHTML = ''; // This line clears the list
 }
 
-canvasCtx.fillStyle = 'red';
-canvasCtx.fillRect(10, 10, 100, 100); // Draw a simple red square
+
 
 function initializeSynthAndEffects() {
     if (Tone.context.state !== 'running') {

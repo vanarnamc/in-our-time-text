@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>About Page</title>
+    <link rel="stylesheet" href="./style.css">
+    <link rel="icon" type="image/png" href="media/favicon.png">
+
+    <style>
+        body{
+            background-color: white;
+        }
+    </style>
+    <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+    <!-- Add any additional stylesheets or scripts here -->
+</head>
+<body>
+
+    <!-- Link to Home Page -->
+    <div>
+        <a href="index.html" id="home" style="mix-blend-mode: difference;">inourti.me</a>
+    </div>
+
+    <!-- About Section -->
+    <div class="about-section">
+        <p>
+            
+Blink detection technology, an emerging facet of facial recognition systems, holds significant potential in revolutionizing how news is consumed and interacted with by audiences. At its core, blink detection is a sophisticated algorithmic process that identifies and interprets the act of blinking, a natural and often subconscious human behavior. In the context of news consumption, this technology can be transformative. For instance, imagine a scenario where a news reader, engrossed in an article on a digital platform, blinks in a pattern that the system interprets as a cue for more information or a desire to skip to a different topic. The system then responsively alters the content, perhaps providing a more in-depth analysis or switching to a related topic of interest. Such an interactive experience can significantly enhance user engagement, making news consumption more personalized and efficient. Additionally, blink detection can be pivotal in accessibility, offering an intuitive method for individuals with mobility challenges to navigate through digital news content.
+
+Moreover, blink detection can be employed to gauge reader engagement and fatigue. For instance, the frequency and duration of blinks can provide insights into a reader's level of concentration or tiredness. News platforms can utilize this data to adjust content delivery, perhaps simplifying or summarizing information when a reader is detected to be fatigued, or presenting more stimulating content when engagement levels are high. This not only tailors the experience to individual needs but also helps in retaining the audience's attention, a critical factor in the digital age where information is abundant and attention spans are short. In the realm of advertising, which is a significant revenue source for news agencies, blink detection can offer groundbreaking insights. Advertisers can analyze blink patterns to determine the effectiveness of their ads. A high blink rate might indicate lower engagement, prompting a change in strategy, while a lower blink rate during an ad could imply higher viewer engagement, offering valuable feedback to marketers.
+
+Furthermore, blink detection could contribute to the credibility and trustworthiness of news. In live interviews or news broadcasts, analyzing the blink patterns of speakers can potentially be used to assess stress levels or detect deception. While this application must be approached with ethical considerations and scientific rigor, it could add an additional layer of analysis to investigative journalism. In educational contexts, blink detection can revolutionize the way news is used as a learning resource. For students engaging with current affairs as part of their curriculum, the technology can adjust the complexity and presentation of news content based on their engagement levels. This personalized approach can enhance comprehension and retention of information, making learning more effective. 
+        </p>
+    </div>
+    <section id="demos">
+
+    <div id="liveView" class="videoView">
+        <div style="position: relative;">
+          <video id="webcam" style="position: absolute; left: 0; top: 0; opacity: 0;" autoplay playsinline></video>
+          <canvas id="output_canvas" width="1920" height="1080"></canvas>
+          <div id="showHideText" style="position: fixed; bottom: 10px; right: 10px; z-index: 999999;">
+            <span>Hide Diagram</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="blend-shapes">
+        <ul class="blend-shapes-list" id="video-blend-shapes"></ul>
+      </div>
+    </section>
+  </div>
+  
+  <script type="module">
+    let results = undefined;
+    const videoBlendShapes = document.getElementById("video-blend-shapes");
+
+    import vision from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3";
+    const { FaceLandmarker, FilesetResolver } = vision;
+    let runningMode = "IMAGE";
+
+    let faceLandmarker;
+    const videoWidth = 1080;
+    const dotColor = 'black'; // Initial color for dots
+    let lastVideoTime = -1;
+
+    const video = document.getElementById("webcam");
+    const canvasElement = document.getElementById("output_canvas");
+    const canvasCtx = canvasElement.getContext("2d");
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await createFaceLandmarker();
+        enableCam();
+    });
+
+    async function createFaceLandmarker() {
+        const filesetResolver = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm");
+        faceLandmarker = await FaceLandmarker.createFromOptions(filesetResolver, {
+            baseOptions: {
+                modelAssetPath: `https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task`,
+                delegate: "GPU"
+            },
+            outputFaceBlendshapes: true,
+            runningMode: "VIDEO",
+            numFaces: 1
+        });
+    }
+
+    function enableCam() {
+        const constraints = {
+            video: {
+                facingMode: "user"
+            }
+        };
+
+        navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+            video.srcObject = stream;
+            video.addEventListener('loadeddata', predictWebcam);
+        }).catch((error) => {
+            console.error('Error accessing the webcam:', error);
+        });
+    }
+
+    async function predictWebcam() {
+    const aspectRatio = video.videoHeight / video.videoWidth;
+    video.style.width = videoWidth + "px";
+    video.style.height = videoWidth * aspectRatio + "px";
+
+    // Adjust canvas size based on device pixel ratio for better resolution
+    const pixelRatio = window.devicePixelRatio || 1;
+    canvasElement.width = videoWidth * pixelRatio;
+    canvasElement.height = (videoWidth * aspectRatio) * pixelRatio;
+    canvasElement.style.width = videoWidth + "px";
+    canvasElement.style.height = videoWidth * aspectRatio + "px";
+    canvasCtx.scale(pixelRatio, pixelRatio);
+
+    if (runningMode === "IMAGE") {
+        runningMode = "VIDEO";
+        await faceLandmarker.setOptions({ runningMode: runningMode });
+    }
+
+    let startTimeMs = performance.now();
+    if (lastVideoTime !== video.currentTime) {
+        lastVideoTime = video.currentTime;
+        results = await faceLandmarker.detectForVideo(video, startTimeMs);
+    }
+
+    if (results && results.faceLandmarks) {
+        canvasCtx.save();
+        canvasCtx.translate(canvasElement.width / pixelRatio, 0);
+        canvasCtx.scale(-1, 1);
+
+        const dotSize = 5; // Adjust dot size for visibility
+
+        for (const landmarks of results.faceLandmarks) {
+            canvasCtx.fillStyle = dotColor; // Use the global dot color variable
+            landmarks.forEach(point => {
+                const x = point.x * canvasElement.width / pixelRatio;
+                const y = point.y * canvasElement.height / pixelRatio;
+                canvasCtx.beginPath();
+                canvasCtx.arc(x, y, dotSize, 0, 2 * Math.PI);
+                canvasCtx.fill();
+            });
+        }
+
+        canvasCtx.restore();
+    }
+
+    drawBlendShapes(videoBlendShapes, results.faceBlendshapes);
+    window.requestAnimationFrame(predictWebcam);
+}
+function drawBlendShapes(el, blendShapes) {
+    if (!blendShapes.length) {
+        return;
+    }
+
+    blendShapes[0].categories.forEach((shape) => {
+        const currentTime = Date.now();
+      
+    });
+
+    // Remove the part that updates the HTML with the list items
+    el.innerHTML = ''; // This line clears the list
+}
+function drawLandmarks(faceLandmarks, pixelRatio) { // Add pixelRatio as a parameter
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+    canvasCtx.fillStyle = dotColor;
+
+    faceLandmarks.forEach(landmarks => {
+        landmarks.forEach(point => {
+            const x = point.x * canvasElement.width / pixelRatio;
+            const y = point.y * canvasElement.height / pixelRatio;
+            canvasCtx.beginPath();
+            canvasCtx.arc(x, y, 10, 0, 2 * Math.PI);
+            canvasCtx.fill();
+        });
+    });
+}
+function toggleFacialDiagram() {
+    const outputCanvas = document.getElementById("output_canvas");
+    outputCanvas.style.display = outputCanvas.style.display === "none" ? "block" : "none";
+    
+    // Update the text content of the "showHideText" element
+    const showHideText = document.getElementById("showHideText");
+    showHideText.textContent = outputCanvas.style.display === "none" ? "Show Diagram" : "Hide Diagram";
+}
+
+// Add a click event listener to the "showHideText" element
+const showHideText = document.getElementById("showHideText");
+showHideText.addEventListener("click", () => {
+    toggleFacialDiagram();
+});
+</script>
+
+</body>
+</html>
