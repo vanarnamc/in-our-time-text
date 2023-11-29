@@ -17,11 +17,13 @@ let faceLandmarker;
 let runningMode = "IMAGE";
 let eyeColor = '#FF3030'; // Initial color, will be updated based on background
 
+let dotColor = 'black';
+let userToggledFacialLandmarks = false; // Initialize the variable
 let enableWebcamButton;
 let webcamRunning = false;
 let headlines = []; // Array to store fetched headlines
 let currentHeadlineIndex = 0; // Index of the current headline
-const videoWidth = 480;
+const videoWidth = 1080;
 
 // New variable to keep track of whether to show the facial diagram
 let showFacialDiagram = true;
@@ -48,9 +50,17 @@ async function createFaceLandmarker() {
     demosSection.classList.remove("invisible");
 }
 
-fetchNYTimesHeadlines();
-createFaceLandmarker();
 
+
+function toggleFacialLandmarks() {
+    const outputCanvas = document.getElementById("output_canvas");
+    outputCanvas.style.display = outputCanvas.style.display === "none" ? "block" : "none";
+    userToggledFacialLandmarks = true; // User has toggled the visibility
+}
+
+fetchNYTimesHeadlines();
+toggleFacialLandmarks();
+createFaceLandmarker();
 // Function to toggle the display of the facial diagram
 function toggleFacialDiagram() {
     const outputCanvas = document.getElementById("output_canvas");
@@ -111,20 +121,29 @@ async function handleClick(event) {
     canvas.style.height = `${event.target.height}px`;
     event.target.parentNode.appendChild(canvas);
     const ctx = canvas.getContext("2d");
+    ctx.lineWidth = 2;
+    const pixelRatio = window.devicePixelRatio || 1;
+// Adjust canvas size based on device pixel ratio
+canvas.width = canvas.offsetWidth * pixelRatio;
+canvas.height = canvas.offsetHeight * pixelRatio;
+
+// Scale the drawing context to match the pixel ratio
+ctx.scale(pixelRatio, pixelRatio);
     const drawingUtils = new DrawingUtils(ctx);
     for (const landmarks of faceLandmarkerResult.faceLandmarks) {
+        // Draw connectors (optional, remove if you only want dots)
         drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_TESSELATION, { color: "#C0C0C070", lineWidth: 1 });
-        drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE, { color: "#FF3030" });
-        drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_RIGHT_EYEBROW, { color: "#FF3030" });
-        drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, { color: "#30FF30" });
-        drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW, { color: "#30FF30" });
-        drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_FACE_OVAL, { color: "#E0E0E0" });
-        drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_LIPS, {
-            color: "#E0E0E0"
-        });
-        drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS, { color: "#FF3030" });
-        drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS, { color: "#30FF30" });
+    
+        // Draw dots at each landmark point
+        ctx.fillStyle = "#FF0000"; // Set the color for the dots
+        const dotSize = 3; // Size of the dots
+        for (const point of landmarks) {
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, dotSize, 0, 2 * Math.PI);
+            ctx.fill();
+        }
     }
+    
     drawBlendShapes(imageBlendShapes, faceLandmarkerResult.faceBlendshapes);
 }
 
@@ -151,31 +170,48 @@ async function fetchNYTimesHeadlines() {
 }
 // Assuming headlines is an array of objects with 'title' and 'imageUrl'
 function displayNextHeadline() {
+    // Check if there are any headlines
     if (headlines.length === 0) {
+        const headlineElement = document.getElementById("headline");
         headlineElement.textContent = "No headlines available";
         return;
     }
+
+    // Get the headline element and the current headline
     const headlineElement = document.getElementById("headline");
     const currentHeadline = headlines[currentHeadlineIndex];
 
+    // Update the headline text
     headlineElement.textContent = currentHeadline.title;
 
-    // Log the image URL associated with the current headline
+    // Log the image URL associated with the current headline, if available
     if (currentHeadline.imageUrl) {
         console.log(`Image URL for '${currentHeadline.title}': ${currentHeadline.imageUrl}`);
     } else {
         console.log(`No image available for '${currentHeadline.title}'.`);
     }
 
+    // Move to the next headline, looping back to the start if at the end
     currentHeadlineIndex = (currentHeadlineIndex + 1) % headlines.length;
+
+    // Remove the centered-large-canvas class from the canvas when a headline is displayed
+    const canvasElement = document.getElementById("output_canvas");
+    if (canvasElement.classList.contains("centered-large-canvas")) {
+        canvasElement.classList.remove("centered-large-canvas");
+    }
 }
+
 
 
 /********************************************************************
 // Face detection and landmark detection on webcam
 ********************************************************************/
 const video = document.getElementById("webcam");
+
 const canvasElement = document.getElementById("output_canvas");
+canvasElement.width = canvasElement.offsetWidth;
+canvasElement.height = canvasElement.offsetHeight;
+
 const canvasCtx = canvasElement.getContext("2d");
 // Check if webcam access is supported.
 function hasGetUserMedia() {
@@ -185,53 +221,70 @@ function hasGetUserMedia() {
 
 function enableCam() {
     if (!faceLandmarker) {
-      console.log("Wait! faceLandmarker not loaded yet.");
-      return;
+        console.log("Wait! faceLandmarker not loaded yet.");
+        return;
     }
-  
+
     // Check and resume the Tone.js audio context
     if (Tone.context.state !== 'running') {
-      Tone.context.resume().then(() => {
-        console.log('Audio context running');
-        initializeSynthAndEffects();
-      }).catch(error => {
-        console.error('Error resuming audio context:', error);
-      });
+        Tone.context.resume().then(() => {
+            console.log('Audio context running');
+            initializeSynthAndEffects();
+        }).catch(error => {
+            console.error('Error resuming audio context:', error);
+        });
     } else {
-      // Initialize the synth if the context is already running
-      initializeSynthAndEffects();
+        // Initialize the synth if the context is already running
+        initializeSynthAndEffects();
     }
-  
+
     // getUserMedia parameters with facingMode
     const constraints = {
-      video: {
-        facingMode: "user" // Prefers the front-facing camera on mobile devices
-      }
+        video: {
+            facingMode: "user" // Prefers the front-facing camera on mobile devices
+        }
     };
-  
+
     // Activate the webcam stream
     navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-      const video = document.getElementById('webcam');
-      video.srcObject = stream;
-      video.addEventListener('loadeddata', predictWebcam);
-  
-      // Hide the welcome screen and show the main content
-      document.getElementById('welcomeScreen').classList.add('hidden');
-      document.getElementById('mainContent').classList.remove('hidden');
+        const video = document.getElementById('webcam');
+        video.srcObject = stream;
+        video.addEventListener('loadeddata', predictWebcam);
+
+        // Hide the welcome screen and show the main content
+        document.getElementById('welcomeScreen').classList.add('hidden');
+        document.getElementById('mainContent').classList.remove('hidden');
+
+        // Remove the centered-large-canvas class from the canvas
+        const canvasElement = document.getElementById("output_canvas");
+        canvasElement.classList.remove("centered-large-canvas");
+
     }).catch((error) => {
-      console.error('Error accessing the webcam:', error);
+        console.error('Error accessing the webcam:', error);
     });
-  }
+}
+
   
 
 
-  document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
+    // Add the 'centered-large-canvas' class to the 'output_canvas' element
+    const canvasElement = document.getElementById("output_canvas");
+
+
     const welcomeText = document.getElementById('welcomeText');
-  
     if (welcomeText) {
-      welcomeText.addEventListener('click', enableCam);
+        welcomeText.addEventListener('click', () => {
+            const canvasElement = document.getElementById("output_canvas");
+            canvasElement.classList.add("centered-canvas");
+    
+            // Call enableCam or any other function you need to run here
+            enableCam();
+        });
     }
-  });
+
+    // Other initialization code can go here, if needed
+});
 
 
 
@@ -240,15 +293,18 @@ let results = undefined;
 const drawingUtils = new DrawingUtils(canvasCtx);
 
 async function predictWebcam() {
-    const radio = video.videoHeight / video.videoWidth;
+    const aspectRatio = video.videoHeight / video.videoWidth;
     video.style.width = videoWidth + "px";
-    video.style.height = videoWidth * radio + "px";
-    canvasElement.style.width = videoWidth + "px";
-    canvasElement.style.height = videoWidth * radio + "px";
-    canvasElement.width = video.videoWidth;
-    canvasElement.height = video.videoHeight;
+    video.style.height = videoWidth * aspectRatio + "px";
 
-    // Ensure the runningMode is set to "VIDEO"
+    // Adjust canvas size based on device pixel ratio for better resolution
+    const pixelRatio = window.devicePixelRatio || 1;
+    canvasElement.width = videoWidth * pixelRatio;
+    canvasElement.height = (videoWidth * aspectRatio) * pixelRatio;
+    canvasElement.style.width = videoWidth + "px";
+    canvasElement.style.height = videoWidth * aspectRatio + "px";
+    canvasCtx.scale(pixelRatio, pixelRatio);
+
     if (runningMode === "IMAGE") {
         runningMode = "VIDEO";
         await faceLandmarker.setOptions({ runningMode: runningMode });
@@ -261,34 +317,30 @@ async function predictWebcam() {
     }
 
     if (results && results.faceLandmarks) {
-        // Save the current state of the canvas context
         canvasCtx.save();
-
-        // Flip the canvas horizontally
+        canvasCtx.translate(canvasElement.width / pixelRatio, 0);
         canvasCtx.scale(-1, 1);
-        canvasCtx.translate(-canvasElement.width, 0);
 
-        // Draw the facial landmarks here
+        const dotSize = 10; // Adjust dot size for visibility
+
         for (const landmarks of results.faceLandmarks) {
-            drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_TESSELATION, { color: "#C0C0C070", lineWidth: 1 });
-            drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_RIGHT_EYE, { color: eyeColor });
-            drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_LEFT_EYE, { color: eyeColor });
-            drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_RIGHT_EYEBROW, { color: "#FF3030" });
-            drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_LEFT_EYEBROW, { color: "#30FF30" });
-            drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_FACE_OVAL, { color: "#E0E0E0" });
-            drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_LIPS, { color: "#E0E0E0" });
-            drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_RIGHT_IRIS, { color: eyeColor });
-            drawingUtils.drawConnectors(landmarks, FaceLandmarker.FACE_LANDMARKS_LEFT_IRIS, {color: eyeColor });
+            canvasCtx.fillStyle = dotColor; // Use the global dot color variable
+            landmarks.forEach(point => {
+                const x = point.x * canvasElement.width / pixelRatio;
+                const y = point.y * canvasElement.height / pixelRatio;
+                canvasCtx.beginPath();
+                canvasCtx.arc(x, y, dotSize, 0, 2 * Math.PI);
+                canvasCtx.fill();
+            });
         }
 
-        // Restore the original state
         canvasCtx.restore();
     }
-    drawBlendShapes(videoBlendShapes, results.faceBlendshapes);
 
-    // Continuously request the next frame
+    drawBlendShapes(videoBlendShapes, results.faceBlendshapes);
     window.requestAnimationFrame(predictWebcam);
 }
+
 
 
 
@@ -302,11 +354,11 @@ function toggleBackgroundColor() {
     if (isBackgroundBlack) {
         body.style.backgroundColor = 'white';
         headline.style.color = 'black';
-        eyeColor = 'black';
+        dotColor = 'black'; // Update dot color
     } else {
         body.style.backgroundColor = 'black';
         headline.style.color = 'white';
-        eyeColor = 'white';
+        dotColor = 'white'; // Update dot color
     }
     isBackgroundBlack = !isBackgroundBlack;
 }
@@ -336,6 +388,8 @@ function drawBlendShapes(el, blendShapes) {
     el.innerHTML = ''; // This line clears the list
 }
 
+canvasCtx.fillStyle = 'red';
+canvasCtx.fillRect(10, 10, 100, 100); // Draw a simple red square
 
 function initializeSynthAndEffects() {
     if (Tone.context.state !== 'running') {

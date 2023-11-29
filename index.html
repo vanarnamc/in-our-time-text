@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>In Our Time</title>
+  <title>inourti.me</title>
   <link rel="stylesheet" href="./style.css">
   <script src="https://cdn.jsdelivr.net/npm/tone@next"></script>
   <link href="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css" rel="stylesheet">
@@ -12,9 +12,8 @@
 
     <!-- Welcome Screen with Clickable Text -->
     <div id="welcomeScreen" class="welcome-screen">
-      <p>Welcome. Here's some text that describes the project. The project uses data from the blah blah blah.<br></p>
       <div id="welcomeText">
-        <p>↳ CLICK TO ENABLE YOUR WEB CAMERA</p>
+        <p>inourti.me<br></p>
       </div>
     </div>
 
@@ -27,7 +26,7 @@
       <div id="liveView" class="videoView">
         <div style="position: relative;">
           <video id="webcam" style="position: absolute; left: 0; top: 0; opacity: 0;" autoplay playsinline></video>
-          <canvas id="output_canvas"></canvas>
+          <canvas id="output_canvas" width="1920" height="1080"></canvas>
           <div id="showHideText" style="position: fixed; bottom: 10px; right: 10px; z-index: 999999;">
             <span>Show Diagram</span>
           </div>
