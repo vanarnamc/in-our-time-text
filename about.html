@@ -26,17 +26,19 @@
     <div class="about-section">
         <p>
             
-Blink detection technology, an emerging facet of facial recognition systems, holds significant potential in revolutionizing how news is consumed and interacted with by audiences. At its core, blink detection is a sophisticated algorithmic process that identifies and interprets the act of blinking, a natural and often subconscious human behavior. In the context of news consumption, this technology can be transformative. For instance, imagine a scenario where a news reader, engrossed in an article on a digital platform, blinks in a pattern that the system interprets as a cue for more information or a desire to skip to a different topic. The system then responsively alters the content, perhaps providing a more in-depth analysis or switching to a related topic of interest. Such an interactive experience can significantly enhance user engagement, making news consumption more personalized and efficient. Additionally, blink detection can be pivotal in accessibility, offering an intuitive method for individuals with mobility challenges to navigate through digital news content.
-
-Moreover, blink detection can be employed to gauge reader engagement and fatigue. For instance, the frequency and duration of blinks can provide insights into a reader's level of concentration or tiredness. News platforms can utilize this data to adjust content delivery, perhaps simplifying or summarizing information when a reader is detected to be fatigued, or presenting more stimulating content when engagement levels are high. This not only tailors the experience to individual needs but also helps in retaining the audience's attention, a critical factor in the digital age where information is abundant and attention spans are short. In the realm of advertising, which is a significant revenue source for news agencies, blink detection can offer groundbreaking insights. Advertisers can analyze blink patterns to determine the effectiveness of their ads. A high blink rate might indicate lower engagement, prompting a change in strategy, while a lower blink rate during an ad could imply higher viewer engagement, offering valuable feedback to marketers.
-
-Furthermore, blink detection could contribute to the credibility and trustworthiness of news. In live interviews or news broadcasts, analyzing the blink patterns of speakers can potentially be used to assess stress levels or detect deception. While this application must be approached with ethical considerations and scientific rigor, it could add an additional layer of analysis to investigative journalism. In educational contexts, blink detection can revolutionize the way news is used as a learning resource. For students engaging with current affairs as part of their curriculum, the technology can adjust the complexity and presentation of news content based on their engagement levels. This personalized approach can enhance comprehension and retention of information, making learning more effective. 
+            “We have now become aware of the possibility of arranging the entire human environment as a work of art, as a teaching machine designed to maximize perception and to make everyday learning a process of discovery. Application of this knowledge would be the equivalent of a thermostat controlling room temperature. It would seem only reasonable to extend such controls to all the sensory thresholds of our being.”
+           <br><div>—Marshall McLuhan, The Medium is the Massage (1967)</div> 
         </p>
+        <p> In a time where optimization, efficiency, and headlines dominate the collective consciousness, questions quickly arise. Does hyper-optimization come with diminishing, if not decreasing returns? How should we deliver the news, and what are the ethical concerns with the 24-hour news cyle? What does  it mean to live in a society where each moment, a new headline arises, many times, outdoing the previous one? Are there alternatives to click-bait journalism? 
+            </p>
+            Inourti.me employs facial recognition technology to monitor the user's eye movements using their computer's camera. Each time the user blinks, the system not only generates a new headline from the New York Times in real time, but also initiates a timer to measure the duration the user spends reading this headline. The time taken to read the headline influences the next interaction: the longer the reading time, the more intense and noisy the sound generated upon the user's subsequent blink. The use of consumer-grade equipment to track involuntary body movements, raises questions about vulnerability, privacy, hyperstimulation, and surveillance in our heavily media-influenced world.
+            
+        
     </div>
-    <section id="demos">
+    <!-- <section id="demos"> -->
 
     <div id="liveView" class="videoView">
-        <div style="position: relative;">
+        <div style="position: fixed;">
           <video id="webcam" style="position: absolute; left: 0; top: 0; opacity: 0;" autoplay playsinline></video>
           <canvas id="output_canvas" width="1920" height="1080"></canvas>
           <div id="showHideText" style="position: fixed; bottom: 10px; right: 10px; z-index: 999999;">

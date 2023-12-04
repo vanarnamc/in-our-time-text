@@ -31,6 +31,9 @@ limitations under the License. */
   src: url(fonts/TimesDotRom.otf);
 }
 
+body{
+  margin:0;
+}
 
 
 h1 {
@@ -167,6 +170,8 @@ footer {
   font-size: 50px;
   line-height: 1;
   margin-top: 93vh;
+  margin-left: 10px;
+  margin-right: 22vw;
 }
 
 .highlighter {
@@ -179,9 +184,10 @@ footer {
   height: 25px; 
   width: 25px;
   position: fixed;
-  top: 10px; 
-  right: 10px; 
+  top: 5px; 
+  right: 5px; 
   z-index: 1000;
+  margin:0;
 }
 
 #infoIconLink:hover{
@@ -265,4 +271,17 @@ footer {
   width: 80vw;  /* Adjust the size as needed */
   height: 80vh; /* Adjust the size as needed */
   z-index: 999;
+}
+
+#muteButton {
+  font-family: "TimesDot";
+  font-size: 15px;
+  line-height: 1;
+  margin:0;
+  text-transform: uppercase;
+}
+
+#muteButton:hover {
+  text-decoration: underline;
+  cursor: pointer;
 }

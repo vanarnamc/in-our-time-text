@@ -19,10 +19,7 @@
       </div>
     </div>
 
-  <!-- Icon Link in the Top Right Corner -->
-  <a href="about.html" id="infoIconLink">
-    <img src="media/infoicon.svg" id="infoIconLink" alt="Info">
-  </a>
+ 
 
   <!-- Main Content (initially hidden) -->
   <div id="mainContent" class="hidden">
@@ -33,7 +30,15 @@
       <div id="liveView" class="videoView">
         <div style="position: relative;">
           <video id="webcam" style="position: absolute; left: 0; top: 0; opacity: 0;" autoplay playsinline></video>
-          <canvas id="output_canvas" width="1920" height="1080"></canvas>
+          
+        <canvas id="output_canvas" width="1920" height="1080"></canvas>
+         <!-- Icon Link in the Top Right Corner -->
+  <a href="about.html" id="infoIconLink">
+    <img src="media/infoicon.svg" id="infoIconLink" alt="Info">
+  </a>
+        <div id="muteButton" style="position: fixed; top: 10px; left: 10px; z-index: 999999;">
+            <span>Mute</span>
+        </div>
           <div id="showHideText" style="position: fixed; bottom: 10px; right: 10px; z-index: 999999;">
             <span>Show Diagram</span>
           </div>

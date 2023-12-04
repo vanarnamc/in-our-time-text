@@ -16,7 +16,10 @@ const videoBlendShapes = document.getElementById("video-blend-shapes");
 let faceLandmarker;
 let runningMode = "IMAGE";
 let eyeColor = '#FF3030'; // Initial color, will be updated based on background
-
+let lastBlinkTimestamp = 0;
+let isMuted = false; // Global mute state
+let eyesClosed = false; // false indicates eyes are open
+let blinkRegistered = false; // Track if a blink has been registered
 let dotColor = 'black';
 let userToggledFacialLandmarks = false; // Initialize the variable
 let enableWebcamButton;
@@ -314,7 +317,7 @@ async function predictWebcam() {
 
 //inversion and dark mode
 let lastBlinkTime = 0;
-const blinkDebounceTime = 200; // 1 second debounce time
+const blinkDebounceTime = 20; // 1 second debounce time
 let isBackgroundBlack = true; // initial background color state
 
 function toggleBackgroundColor() {
@@ -326,6 +329,8 @@ function toggleBackgroundColor() {
         headline.style.color = 'black';
         dotColor = 'black'; // Update dot color
         infoIcon.style.filter = 'invert(0%)'; // No inversion for light mode
+        muteButton.style.filter = 'invert(0%)'; // No inversion for light mode
+        showHideText.style.filter = 'invert(0%)'; // No inversion for light mode
 
     } 
     
@@ -334,9 +339,31 @@ function toggleBackgroundColor() {
         headline.style.color = 'white';
         dotColor = 'white'; // Update dot color
         infoIcon.style.filter = 'invert(100%)'; // Invert colors for dark mode
+        muteButton.style.filter = 'invert(100%)'; // No inversion for light mode
+        showHideText.style.filter = 'invert(100%)'; // No inversion for light mode
 
     }
     isBackgroundBlack = !isBackgroundBlack;
+}
+// Mute button event listener
+const muteButton = document.getElementById('muteButton');
+muteButton.addEventListener('click', () => {
+    isMuted = !isMuted;
+    Tone.Master.mute = isMuted;
+    muteButton.textContent = isMuted ? 'Unmute' : 'Mute';
+});
+
+// Function to map time duration to volume
+function mapDurationToVolume(duration) {
+    const maxVolume = -5; // A reasonable maximum volume in dB
+    const minVolume = -30; // Minimum volume in dB
+    const maxDuration = 5000; // Maximum duration in milliseconds (e.g., 5 seconds)
+
+    const clampedDuration = Math.min(duration, maxDuration);
+
+    // Map duration to volume (linear scaling)
+    const volume = minVolume + ((maxVolume - minVolume) * (clampedDuration / maxDuration));
+    return volume;
 }
 
 function drawBlendShapes(el, blendShapes) {
@@ -344,56 +371,102 @@ function drawBlendShapes(el, blendShapes) {
         return;
     }
 
+    let isCurrentlyClosed = false;
+    const currentTime = Date.now();
+
     blendShapes[0].categories.forEach((shape) => {
-        const currentTime = Date.now();
         if ((shape.categoryName === 'eyeBlinkLeft' || shape.categoryName === 'eyeBlinkRight') && shape.score > 0.6) {
-            if (currentTime - lastBlinkTime > blinkDebounceTime) {
-                console.log(`Eye Blink Detected: ${shape.categoryName} - Score: ${shape.score}`);
-
-                // Play a random frequency on eye blink
-                playRandomFrequency();
-
-                toggleBackgroundColor();
-                displayNextHeadline();
-                lastBlinkTime = currentTime;
-            }
+            isCurrentlyClosed = true;
         }
     });
 
-    // Remove the part that updates the HTML with the list items
-    el.innerHTML = ''; // This line clears the list
+    // If eyes just closed and a blink hasn't been registered yet
+    if (isCurrentlyClosed && !eyesClosed && !blinkRegistered) {
+        if (currentTime - lastBlinkTime > blinkDebounceTime) {
+            console.log(`Eye Blink Detected`);
+            processBlink(currentTime);
+        }
+        eyesClosed = true;
+        blinkRegistered = true; // Mark that a blink has been registered
+    } else if (!isCurrentlyClosed) {
+        eyesClosed = false;
+        blinkRegistered = false; // Reset when eyes are opened
+    }
+
+    el.innerHTML = ''; // Clear the blend shapes list
+}
+
+function processBlink(currentTime) {
+    // Only adjust volume if not muted
+    if (!isMuted) {
+        if (lastBlinkTimestamp !== 0) {
+            const timeSinceLastBlink = currentTime - lastBlinkTimestamp;
+            console.log(`Milliseconds since last blink: ${timeSinceLastBlink}`);
+
+            // Calculate the new volume based on time since last blink
+            const newVolume = mapDurationToVolume(timeSinceLastBlink);
+            Tone.Master.volume.value = newVolume; // Adjust the master volume
+            console.log(`Master volume set to: ${newVolume} dB`);
+        }
+    }
+
+    lastBlinkTimestamp = currentTime; // Update the last blink timestamp
+    toggleBackgroundColor(); // Toggle the background color
+    displayNextHeadline();    // Display the next headline
+    lastBlinkTime = currentTime; // Update the last blink time
+    playRandomFrequency(); // Play a random frequency
 }
 
 
+let harshNoiseSynth;
 
 function initializeSynthAndEffects() {
-    if (Tone.context.state !== 'running') {
-      console.error('Audio context is not running');
-      return;
-    }
-  
-    synth = new Tone.Synth({
-      oscillator: { type: 'triangle' },
-      envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 }
-    });
-  
-    reverb = new Tone.Reverb({
-      decay: 5,
-      wet: 0.75
-    });
-  
-    synth.chain(reverb, Tone.Destination);
-    synthReady = true;
-    console.log('Synthesizer and reverb initialized');
+  if (Tone.context.state !== 'running') {
+    console.error('Audio context is not running');
+    return;
   }
 
+  // Existing Synth
+  synth = new Tone.Synth({
+    oscillator: { type: 'triangle' },
+    envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 }
+  });
+
+  // Harsh Noise Synth
+  harshNoiseSynth = new Tone.NoiseSynth({
+    noise: { type: 'white' },
+    envelope: { attack: 0.005, decay: 0.1, sustain: 0.05, release: 1 }
+  });
+
+  reverb = new Tone.Reverb({ decay: 5, wet: 0.75 });
+  synth.toDestination(); // Ensure the synth is connected to the destination
+
+  // Chain both synths to the reverb and then to the destination
+  synth.chain(reverb, Tone.Destination);
+  harshNoiseSynth.chain(reverb, Tone.Destination);
+  synthReady = true;
+  console.log('Synthesizers and reverb initialized');
+
+}
+
+function changeMasterVolume(newVolume) {
+    Tone.Master.volume.value = newVolume; // newVolume should be in dB
+}
+
+let filter = new Tone.Filter(800, "lowpass").toDestination();
+
+// Inside initializeSynthAndEffects
+harshNoiseSynth.connect(filter);
+
+
   function playRandomFrequency() {
-    if (!synthReady) {
+    if (!synthReady && !isMuted) {
       console.warn('Synthesizer is not ready.');
       return;
     }
   
     const randomFreq = Math.random() * (18000 - 20) + 800; // Random frequency between 20 Hz and 20,000 Hz
-    synth.triggerAttackRelease(randomFreq, "8n");
-    console.log(`Playing frequency: ${randomFreq.toFixed(2)} Hz`);
+    synth.triggerAttackRelease(randomFreq, "16n");
+    harshNoiseSynth.triggerAttackRelease('16n');
+
   }
