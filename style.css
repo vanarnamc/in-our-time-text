@@ -285,3 +285,24 @@ footer {
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* Medium devices (portrait tablets and large phones, 600px to 900px) */
+@media screen and (max-width: 600px) and (-webkit-min-device-pixel-ratio: 2) {
+  /* Styles for medium screens */
+  #muteButton {
+    font-family: "TimesDot";
+    font-size: 35px;
+    line-height: 1;
+    margin:0;
+    text-transform: uppercase;
+  }
+  #showHideText{
+    font-family: "TimesDot";
+    font-size: 35px;
+    line-height: 1;
+    margin:0;
+    text-transform: uppercase;
+  }
+
+
+}
