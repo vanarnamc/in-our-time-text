@@ -291,18 +291,25 @@ footer {
   /* Styles for medium screens */
   #muteButton {
     font-family: "TimesDot";
-    font-size: 35px;
+    font-size: 20px;
     line-height: 1;
     margin:0;
     text-transform: uppercase;
   }
   #showHideText{
     font-family: "TimesDot";
-    font-size: 35px;
+    font-size: 20px;
     line-height: 1;
     margin:0;
     text-transform: uppercase;
   }
+   #headline{
+    font-family: "TimesDot";
+    font-size: 60px;
+    line-height: 1;
+    margin:0;
+   
+   }
 
 
 }
