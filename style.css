@@ -310,6 +310,13 @@ footer {
     margin:0;
    
    }
-
+   .about-section{
+    font-family: "TimesDot";
+    font-size: 25px;
+    line-height: 1;
+    margin-top: 93vh;
+    margin-left: 10px;
+    margin-right: 6vw;
+   }
 
 }
